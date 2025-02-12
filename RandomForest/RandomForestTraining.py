@@ -6,6 +6,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import skew, kurtosis, entropy
 from glob import glob
+from Utils.benford_analysis import benford_deviation as bd
+from Utils.zipf_analysis import zipf_correlation as zc
 
 # ---- Feature Extraction Function ---- #
 def extract_features(df):
@@ -21,6 +23,7 @@ def extract_features(df):
         features['num_max'] = numeric_df.max().mean()
         features['num_skew'] = skew(numeric_df, nan_policy='omit').mean()
         features['num_kurtosis'] = kurtosis(numeric_df, nan_policy='omit').mean()
+        features['benford_mae'] = bd(numeric_df.stack())
 
     # Categorical Features
     categorical_df = df.select_dtypes(include=['object', 'category'])
@@ -29,7 +32,7 @@ def extract_features(df):
         features['cat_unique_ratio'] = categorical_df.nunique().mean()
         features['cat_mode_freq'] = categorical_df.mode().iloc[0].value_counts().mean()
         features['cat_entropy'] = entropy(categorical_df.apply(lambda x: x.value_counts(normalize=True), axis=0), nan_policy='omit').mean()
-
+        features['zipf_corr'] = zc(categorical_df.stack())
     return pd.DataFrame([features])
 
 # ---- Train Random Forest with Real and Fake Data ---- #
