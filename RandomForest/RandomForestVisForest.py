@@ -8,7 +8,7 @@ model_path = "models/randomForest/random_forest_multi.pkl"
 rf_classifier = joblib.load(model_path)
 
 # Select a few trees to visualize
-num_trees_to_plot = 3  # Adjust as needed (e.g., 3 trees)
+num_trees_to_plot = 3  #Number of trees to plot
 fig, axes = plt.subplots(nrows=num_trees_to_plot, ncols=1, figsize=(12, 6 * num_trees_to_plot))
 
 # Plot selected decision trees from the Random Forest

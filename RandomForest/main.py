@@ -1,6 +1,8 @@
 import os
 import argparse
-from RandomForest.RandomForestTraining import classify_new_dataset
+from RandomForestTraining import classify_new_dataset
+from Utils.benford_analysis import benford_deviation as bd
+from Utils.zipf_analysis import zipf_correlation as zc
 
 def main():
     parser = argparse.ArgumentParser(description='Classify a folder of datasets as Real or Fake.')

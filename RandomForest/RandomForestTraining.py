@@ -68,7 +68,7 @@ def train_random_forest(real_data_folder, fake_data_folder):
     X_scaled = scaler.fit_transform(X)
 
     # Train Random Forest Classifier
-    rf_classifier = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=1337)
+    rf_classifier = RandomForestClassifier(n_estimators=250, max_depth=6, random_state=42)
     rf_classifier.fit(X_scaled, y)
 
     # Save Model and Scaler
