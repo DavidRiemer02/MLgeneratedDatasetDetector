@@ -21,7 +21,7 @@ class Discriminator(nn.Module):
         return self.model(x)
 
 # Load dataset (replace with new dataset path)
-new_data_path = "data/Artificial_Data.csv"  # <--- CHANGE THIS
+new_data_path = "data/Artificial_Data.csv"
 new_df = pd.read_csv(new_data_path)
 
 # Load pre-fitted scalers from training data

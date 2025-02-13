@@ -4,10 +4,13 @@ import joblib
 import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 from scipy.stats import skew, kurtosis, entropy
 from glob import glob
 from Utils.benford_analysis import benford_deviation as bd
 from Utils.zipf_analysis import zipf_correlation as zc
+
+
 
 # ---- Feature Extraction Function ---- #
 def extract_features(df):
@@ -24,6 +27,15 @@ def extract_features(df):
         features['num_skew'] = skew(numeric_df, nan_policy='omit').mean()
         features['num_kurtosis'] = kurtosis(numeric_df, nan_policy='omit').mean()
         features['benford_mae'] = bd(numeric_df.stack())
+    else:
+        # Default values when there are no numerical columns
+        features['num_mean'] = 0
+        features['num_std'] = 0
+        features['num_min'] = 0
+        features['num_max'] = 0
+        features['num_skew'] = 0
+        features['num_kurtosis'] = 0
+        features['benford_mae'] = 0
 
     # Categorical Features
     categorical_df = df.select_dtypes(include=['object', 'category'])
@@ -33,6 +45,14 @@ def extract_features(df):
         features['cat_mode_freq'] = categorical_df.mode().iloc[0].value_counts().mean()
         features['cat_entropy'] = entropy(categorical_df.apply(lambda x: x.value_counts(normalize=True), axis=0), nan_policy='omit').mean()
         features['zipf_corr'] = zc(categorical_df.stack())
+    else:
+        # Default values when there are no categorical columns
+        features['num_categorical'] = 0
+        features['cat_unique_ratio'] = 0
+        features['cat_mode_freq'] = 0
+        features['cat_entropy'] = 0
+        features['zipf_corr'] = 0
+
     return pd.DataFrame([features])
 
 # ---- Train Random Forest with Real and Fake Data ---- #
@@ -81,23 +101,32 @@ def train_random_forest(real_data_folder, fake_data_folder):
 # ---- Classify Completely New Dataset ---- #
 def classify_new_dataset(file_path):
     """Classifies a new dataset as Real or Fake based on extracted features."""
-    new_df = pd.read_csv(file_path)
+    try:
+        new_df = pd.read_csv(file_path)
+        
+        if new_df.empty:
+            print("⚠️ The dataset is empty and cannot be classified.")
+            return
+        
+        # Extract features
+        new_features = extract_features(new_df)
 
-    # Extract features
-    new_features = extract_features(new_df)
+        # Load trained model and scaler
+        rf_classifier = joblib.load("models/randomForest/random_forest_multi.pkl")
+        scaler = joblib.load("models/randomForest/scaler_multi.pkl")
 
-    # Load trained model and scaler
-    rf_classifier = joblib.load("models/randomForest/random_forest_multi.pkl")
-    scaler = joblib.load("models/randomForest/scaler_multi.pkl")
+        # Standardize features
+        new_X_scaled = scaler.transform(new_features)
 
-    # Standardize features
-    new_X_scaled = scaler.transform(new_features)
+        # Predict
+        prediction = rf_classifier.predict(new_X_scaled)
+        label = "Real" if prediction[0] == 1 else "Fake"
 
-    # Predict
-    prediction = rf_classifier.predict(new_X_scaled)
-    label = "Real" if prediction[0] == 1 else "Fake"
+        print(f"✅ Classification Result: {label}")
 
-    print(f"Classification Result: {label}")
+    except Exception as e:
+        print(f"⚠️ Error during classification: {e}")
+
 
     # ---- TRAINING SECTION ---- #
 if __name__ == "__main__":
