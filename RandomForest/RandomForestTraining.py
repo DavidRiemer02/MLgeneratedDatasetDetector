@@ -10,8 +10,6 @@ from glob import glob
 from Utils.benford_analysis import benford_deviation as bd
 from Utils.zipf_analysis import zipf_correlation as zc
 
-
-
 # ---- Feature Extraction Function ---- #
 def extract_features(df):
     """Extracts statistical features from any dataset."""
@@ -24,8 +22,8 @@ def extract_features(df):
         features['num_std'] = numeric_df.std().mean()
         features['num_min'] = numeric_df.min().mean()
         features['num_max'] = numeric_df.max().mean()
-        features['num_skew'] = skew(numeric_df, nan_policy='omit').mean()
-        features['num_kurtosis'] = kurtosis(numeric_df, nan_policy='omit').mean()
+        features['num_skew'] = np.clip(skew(numeric_df, nan_policy='omit').mean(), -10, 10)
+        features['num_kurtosis'] = np.clip(kurtosis(numeric_df, nan_policy='omit').mean(), -10, 10)
         features['benford_mae'] = bd(numeric_df.stack())
     else:
         # Default values when there are no numerical columns
@@ -63,7 +61,9 @@ def train_random_forest(real_data_folder, fake_data_folder):
     # Load & Process Real Datasets
     real_files = glob(os.path.join(real_data_folder, "*.csv"))
     for file in real_files:
-        df = pd.read_csv(file).head(1000)  # Use first 1000 rows
+        df = pd.read_csv(file)
+        if len(df) > 1000:
+            df = df.sample(n=1000, random_state=42)  # Randomly sample 1000 rows
         real_features = extract_features(df)
         real_features["label"] = 1  # Real
         feature_list.append(real_features)
@@ -71,7 +71,9 @@ def train_random_forest(real_data_folder, fake_data_folder):
     # Load & Process Fake Datasets
     fake_files = glob(os.path.join(fake_data_folder, "*.csv"))
     for file in fake_files:
-        df = pd.read_csv(file).head(1000)
+        df = pd.read_csv(file)
+        if len(df) > 1000:
+            df = df.sample(n=1000, random_state=42)  # Randomly sample 1000 rows
         fake_features = extract_features(df)
         fake_features["label"] = 0  # Fake
         feature_list.append(fake_features)
@@ -128,11 +130,12 @@ def classify_new_dataset(file_path):
         print(f"⚠️ Error during classification: {e}")
 
 
-    # ---- TRAINING SECTION ---- #
+# ---- TRAINING SECTION ---- #
 if __name__ == "__main__":
     real_data_folder = "TrainingData/realData"  
     fake_data_folder = "TrainingData/fakeData"
     
     print("Training Random Forest Model...")
+    train_random_forest(real_data_folder, fake_data_folder)
     train_random_forest(real_data_folder, fake_data_folder)
     print("Training Completed!")
