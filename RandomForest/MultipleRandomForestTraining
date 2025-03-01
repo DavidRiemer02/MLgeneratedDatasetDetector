@@ -10,12 +10,10 @@ from glob import glob
 from Utils.benford_analysis import benford_deviation as bd
 from Utils.zipf_analysis import zipf_correlation as zc
 
-# ---- Feature Extraction Function ---- #
 def extract_features(df):
     """Extracts statistical features from any dataset."""
     features = {}
 
-    # Numerical Features
     numeric_df = df.select_dtypes(include=['int64', 'float64'])
     if not numeric_df.empty:
         features['num_mean'] = numeric_df.mean().mean()
@@ -26,16 +24,11 @@ def extract_features(df):
         features['num_kurtosis'] = np.clip(kurtosis(numeric_df, nan_policy='omit').mean(), -10, 10)
         features['benford_mae'] = bd(numeric_df.stack())
     else:
-        # Default values when there are no numerical columns
-        features['num_mean'] = 0
-        features['num_std'] = 0
-        features['num_min'] = 0
-        features['num_max'] = 0
-        features['num_skew'] = 0
-        features['num_kurtosis'] = 0
-        features['benford_mae'] = 0
+        features.update({
+            'num_mean': 0, 'num_std': 0, 'num_min': 0, 'num_max': 0,
+            'num_skew': 0, 'num_kurtosis': 0, 'benford_mae': 0
+        })
 
-    # Categorical Features
     categorical_df = df.select_dtypes(include=['object', 'category'])
     if not categorical_df.empty:
         features['num_categorical'] = len(categorical_df.columns)
@@ -44,96 +37,87 @@ def extract_features(df):
         features['cat_entropy'] = entropy(categorical_df.apply(lambda x: x.value_counts(normalize=True), axis=0), nan_policy='omit').mean()
         features['zipf_corr'] = zc(categorical_df.stack())
     else:
-        # Default values when there are no categorical columns
-        features['num_categorical'] = 0
-        features['cat_unique_ratio'] = 0
-        features['cat_mode_freq'] = 0
-        features['cat_entropy'] = 0
-        features['zipf_corr'] = 0
+        features.update({'num_categorical': 0, 'cat_unique_ratio': 0, 'cat_mode_freq': 0, 'cat_entropy': 0, 'zipf_corr': 0})
 
     return pd.DataFrame([features])
 
-# ---- Train Random Forest with Real and Fake Data ---- #
-def train_random_forest(real_data_folder, fake_data_folder):
-    """Trains a Random Forest on multiple real and fake datasets."""
+def train_multiple_models(real_data_folder, fake_data_folder, sample_size, n_estimators, max_depth):
+    """Trains a Random Forest model with specific hyperparameters."""
     feature_list = []
-
-    # Load & Process Real Datasets
+    
     real_files = glob(os.path.join(real_data_folder, "*.csv"))
     for file in real_files:
         df = pd.read_csv(file)
-        if len(df) > 1000:
-            df = df.sample(n=1000, random_state=42)  # Randomly sample 1000 rows
+        if len(df) > sample_size:
+            df = df.sample(n=sample_size, random_state=42)
         real_features = extract_features(df)
         real_features["label"] = 1  # Real
         feature_list.append(real_features)
-
-    # Load & Process Fake Datasets
+    
     fake_files = glob(os.path.join(fake_data_folder, "*.csv"))
     for file in fake_files:
         df = pd.read_csv(file)
-        if len(df) > 1000:
-            df = df.sample(n=1000, random_state=42)  # Randomly sample 1000 rows
+        if len(df) > sample_size:
+            df = df.sample(n=sample_size, random_state=42)
         fake_features = extract_features(df)
         fake_features["label"] = 0  # Fake
         feature_list.append(fake_features)
-
-    # Combine all extracted features
+    
     feature_df = pd.concat(feature_list, ignore_index=True)
-
-    # Prepare input features and labels
     X = feature_df.drop(columns=["label"])
     y = feature_df["label"]
-
-    # Standardize features
+    
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-
-    # Train Random Forest Classifier
-    rf_classifier = RandomForestClassifier(n_estimators=250, max_depth=6, random_state=42)
+    
+    rf_classifier = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
     rf_classifier.fit(X_scaled, y)
-
-    # Save Model and Scaler
+    
     os.makedirs("models/randomForest", exist_ok=True)
-    joblib.dump(rf_classifier, "models/randomForest/random_forest_multi.pkl")
-    joblib.dump(scaler, "models/randomForest/scaler_multi.pkl")
+    model_filename = f"random_forest_s{sample_size}_n{n_estimators}_d{max_depth}.pkl"
+    scaler_filename = f"scaler_s{sample_size}_n{n_estimators}_d{max_depth}.pkl"
+    
+    joblib.dump(rf_classifier, os.path.join("models/randomForest", model_filename))
+    joblib.dump(scaler, os.path.join("models/randomForest", scaler_filename))
+    
+    print(f"✅ Random Forest trained with Sample Size={sample_size}, n_estimators={n_estimators}, max_depth={max_depth}!")
 
-    print(f"✅ Random Forest trained on {len(real_files)} real datasets + {len(fake_files)} fake datasets!")
-
-# ---- Classify Completely New Dataset ---- #
 def classify_new_dataset(file_path):
-    """Classifies a new dataset as Real or Fake based on extracted features."""
+    """Classifies a dataset using all trained models in the models folder."""
     try:
         new_df = pd.read_csv(file_path)
         if new_df.empty:
             print("⚠️ The dataset is empty and cannot be classified.")
             return
         
-        # Extract features
         new_features = extract_features(new_df)
-
-        # Load trained model and scaler
-        rf_classifier = joblib.load("models/randomForest/random_forest.pkl")
-        scaler = joblib.load("models/randomForest/scaler_multi.pkl")
-
-        # Standardize features
-        new_X_scaled = scaler.transform(new_features)
-
-        # Predict
-        prediction = rf_classifier.predict(new_X_scaled)
-        label = "Real" if prediction[0] == 1 else "Fake"
-
-        print(f"✅ Classification Result: {label}")
-
+        model_files = glob("models/randomForest/random_forest_*.pkl")
+        
+        results = {}
+        for model_file in model_files:
+            model_name = os.path.basename(model_file).replace(".pkl", "")
+            scaler_file = model_file.replace("random_forest", "scaler")
+            
+            rf_classifier = joblib.load(model_file)
+            scaler = joblib.load(scaler_file)
+            new_X_scaled = scaler.transform(new_features)
+            prediction = rf_classifier.predict(new_X_scaled)
+            label = "Real" if prediction[0] == 1 else "Fake"
+            results[model_name] = label
+        
+        print("✅ Classification Results:")
+        for model, label in results.items():
+            print(f"{model}: {label}")
+    
     except Exception as e:
         print(f"⚠️ Error during classification: {e}")
-
 
 if __name__ == "__main__":
     real_data_folder = "TrainingData/realData"  
     fake_data_folder = "TrainingData/fakeData"
     
-    print("Training Random Forest Model...")
-    train_random_forest(real_data_folder, fake_data_folder)
-    train_random_forest(real_data_folder, fake_data_folder)
+    print("Training Multiple Random Forest Models...")
+    train_multiple_models(real_data_folder, fake_data_folder, 500, 100, 5)
+    train_multiple_models(real_data_folder, fake_data_folder, 1000, 250, 10)
+    train_multiple_models(real_data_folder, fake_data_folder, 2000, 500, 15)
     print("Training Completed!")

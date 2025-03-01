@@ -1,6 +1,7 @@
 import os
 import argparse
 from RandomForestTraining import classify_new_dataset
+from MultipleRandomForestTraining import classify_new_dataset
 from Utils.benford_analysis import benford_deviation as bd
 from Utils.zipf_analysis import zipf_correlation as zc
 
