@@ -1,7 +1,7 @@
 import os
 import argparse
 from RandomForestTraining import classify_new_dataset
-from MultipleRandomForestTraining import classify_new_dataset
+from MultipleRandomForestTraining import classify_new_dataset_multiple_models
 from Utils.benford_analysis import benford_deviation as bd
 from Utils.zipf_analysis import zipf_correlation as zc
 
@@ -19,6 +19,8 @@ def main():
         if file_name.endswith('.csv') and os.path.isfile(file_path):
             print(f"Processing {file_name}...")
             classify_new_dataset(file_path)
+            print("Now Processing with Multiple Models...")
+            classify_new_dataset_multiple_models(file_path)
 
 if __name__ == "__main__":
     main()

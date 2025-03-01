@@ -95,8 +95,8 @@ def train_random_forest(real_data_folder, fake_data_folder):
 
     # Save Model and Scaler
     os.makedirs("models/randomForest", exist_ok=True)
-    joblib.dump(rf_classifier, "models/randomForest/random_forest_multi.pkl")
-    joblib.dump(scaler, "models/randomForest/scaler_multi.pkl")
+    joblib.dump(rf_classifier, "models/randomForest/random_forest_original.pkl")
+    joblib.dump(scaler, "models/randomForest/scaler_original.pkl")
 
     print(f"✅ Random Forest trained on {len(real_files)} real datasets + {len(fake_files)} fake datasets!")
 
@@ -113,8 +113,8 @@ def classify_new_dataset(file_path):
         new_features = extract_features(new_df)
 
         # Load trained model and scaler
-        rf_classifier = joblib.load("models/randomForest/random_forest.pkl")
-        scaler = joblib.load("models/randomForest/scaler_multi.pkl")
+        rf_classifier = joblib.load("models/randomForest/random_forest_original.pkl")
+        scaler = joblib.load("models/randomForest/scaler_multi_original.pkl")
 
         # Standardize features
         new_X_scaled = scaler.transform(new_features)

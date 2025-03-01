@@ -82,7 +82,7 @@ def train_multiple_models(real_data_folder, fake_data_folder, sample_size, n_est
     
     print(f"✅ Random Forest trained with Sample Size={sample_size}, n_estimators={n_estimators}, max_depth={max_depth}!")
 
-def classify_new_dataset(file_path):
+def classify_new_dataset_multiple_models(file_path):
     """Classifies a dataset using all trained models in the models folder."""
     try:
         new_df = pd.read_csv(file_path)
