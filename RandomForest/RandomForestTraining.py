@@ -114,7 +114,7 @@ def classify_new_dataset(file_path):
 
         # Load trained model and scaler
         rf_classifier = joblib.load("models/randomForest/random_forest_original.pkl")
-        scaler = joblib.load("models/randomForest/scaler_multi_original.pkl")
+        scaler = joblib.load("models/randomForest/scaler_original.pkl")
 
         # Standardize features
         new_X_scaled = scaler.transform(new_features)
@@ -123,10 +123,10 @@ def classify_new_dataset(file_path):
         prediction = rf_classifier.predict(new_X_scaled)
         label = "Real" if prediction[0] == 1 else "Fake"
 
-        print(f"✅ Classification Result: {label}")
+        print(f"✅ Classification Result for original model: {label}")
 
     except Exception as e:
-        print(f"⚠️ Error during classification: {e}")
+        print(f"⚠️ Error during classification for original model: {e}")
 
 
 if __name__ == "__main__":

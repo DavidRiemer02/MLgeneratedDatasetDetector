@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 
 # Load CSV dataset
-csv_file = "data/CD.csv"
+csv_file = "TrainingData/realData/car_price_dataset.csv"
 df = pd.read_csv(csv_file)
 
 # Identify column types
@@ -127,8 +127,8 @@ for epoch in range(num_epochs):
         print(f"Epoch {epoch}: D Loss: {d_loss.item()}, G Loss: {g_loss.item()}")
 
 # Save the trained discriminator model
-torch.save(discriminator.state_dict(), "models/discriminator.pth")
-print("✅ Discriminator model saved as 'discriminator.pth' under models folder")
+torch.save(discriminator.state_dict(), "models/gan/discriminator.pth")
+print("✅ Discriminator model saved as 'discriminator.pth' under models/gan folder")
 
 
 # Generate new synthetic CSV rows
@@ -162,5 +162,5 @@ final_generated_data = np.column_stack((generated_data[:, :len(numerical_columns
 new_df = pd.DataFrame(final_generated_data, columns=numerical_columns + categorical_columns)
 
 # Save to CSV
-new_df.to_csv("data/generated_data.csv", index=False)
-print("Generated data saved to 'generated_data.csv'")
+new_df.to_csv("TrainingData/fakedata/generated_data.csv", index=False)
+print("Generated data saved to 'TrainingData/fakedata/generated_data.csv'")

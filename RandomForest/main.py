@@ -18,8 +18,6 @@ def main():
         file_path = os.path.join(args.folder_path, file_name)
         if file_name.endswith('.csv') and os.path.isfile(file_path):
             print(f"Processing {file_name}...")
-            classify_new_dataset(file_path)
-            print("Now Processing with Multiple Models...")
             classify_new_dataset_multiple_models(file_path)
 
 if __name__ == "__main__":
