@@ -19,34 +19,41 @@ def benford_deviation(series):
     return deviation
 
 def visualize_benford_law(csv_file):
-    """Reads a CSV file and visualizes the compliance of each numerical column with Benford's Law."""
+    """Reads a CSV file and visualizes the compliance of each numerical column with Benford's Law one by one, only if MAE is not NaN."""
     df = pd.read_csv(csv_file)
     
     num_columns = df.select_dtypes(include=[np.number]).columns
-    fig, axes = plt.subplots(len(num_columns), 1, figsize=(8, 5 * len(num_columns)))
-    
-    if len(num_columns) == 1:
-        axes = [axes]  # Ensure we have an iterable list of axes
     
     benford_dist = np.array([np.log10(1 + 1/d) for d in range(1, 10)])
     digits = np.arange(1, 10)
     
-    for ax, col in zip(axes, num_columns):
-        deviation, first_digits = benford_deviation(df[col])
-        
-        observed_counts = first_digits.value_counts(normalize=True).sort_index()
-        
-        ax.bar(digits, observed_counts.reindex(digits, fill_value=0), alpha=0.7, label='Observed')
-        ax.plot(digits, benford_dist, marker='o', linestyle='-', color='r', label='Benford Expected')
-        
-        ax.set_xticks(digits)
-        ax.set_xlabel("First Digit")
-        ax.set_ylabel("Frequency")
-        ax.set_title(f"Benford's Law Compliance: {col} (MAE: {deviation:.4f})")
-        ax.legend()
-    
-    plt.tight_layout()
-    plt.show()
+    for col in num_columns:
+        deviation = benford_deviation(df[col])  # Get only the deviation
 
-csv_file = "/mnt/data/your_file.csv"  # Replace with the actual file path
+        # Skip plotting if deviation is NaN
+        if np.isnan(deviation):
+            print(f"Skipping column '{col}' due to NaN MAE.")
+            continue
+
+        # Extract first digits manually
+        first_digits = df[col].dropna().astype(str).str.extract(r'(\d)')[0].dropna().astype(int)
+        
+        # Compute observed distribution
+        observed_counts = first_digits.value_counts(normalize=True).sort_index()
+        observed_dist = np.array([observed_counts.get(d, 0) for d in digits])
+
+        # Create and show individual plot
+        plt.figure(figsize=(8, 5))
+        plt.bar(digits, observed_dist, alpha=0.7, color='lightblue', label='Observed')
+        plt.plot(digits, benford_dist, marker='o', linestyle='-', color='pink', label='Benford Expected')
+        
+        plt.xticks(digits)
+        plt.xlabel("First Digit")
+        plt.ylabel("Frequency")
+        plt.title(f"Benford's Law Compliance: {col} (MAE: {deviation:.4f})")
+        plt.legend()
+        
+        plt.show()
+
+csv_file = "TrainingData/fakeData/chatGPT_Benford_s_Law_Dataset.csv"
 visualize_benford_law(csv_file)
