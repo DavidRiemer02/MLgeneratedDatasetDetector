@@ -17,7 +17,7 @@ def extract_features(df):
 
     # Numerical Features
     numeric_df = df.select_dtypes(include=['int64', 'float64'])
-    if not numeric_df.empty:
+    if not  wqwnumeric_df.empty:
         features['num_mean'] = numeric_df.mean().mean()
         features['num_std'] = numeric_df.std().mean()
         features['num_min'] = numeric_df.min().mean()
@@ -113,8 +113,8 @@ def classify_new_dataset(file_path):
         new_features = extract_features(new_df)
 
         # Load trained model and scaler
-        rf_classifier = joblib.load("models/randomForest/random_forest_original.pkl")
-        scaler = joblib.load("models/randomForest/scaler_original.pkl")
+        rf_classifier = joblib.load("models/randomForest/random_forest_original_2.pkl")
+        scaler = joblib.load("models/randomForest/scaler_original_2.pkl")
 
         # Standardize features
         new_X_scaled = scaler.transform(new_features)

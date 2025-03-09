@@ -5,7 +5,7 @@ from sklearn.tree import plot_tree
 import os
 
 # Load the trained Random Forest model
-model_path = "models/randomForest/random_forest_multi.pkl"
+model_path = "models/randomForest/random_forest_s2000_n1000_d5.pkl"
 rf_classifier = joblib.load(model_path)
 
 # Define feature names based on the extracted statistical features used during training

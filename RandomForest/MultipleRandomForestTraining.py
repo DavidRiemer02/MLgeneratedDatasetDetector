@@ -117,9 +117,8 @@ if __name__ == "__main__":
     fake_data_folder = "TrainingData/fakeData"
     
     print("Training Multiple Random Forest Models...")
-    train_multiple_models(real_data_folder, fake_data_folder, 500, 100, 5)
-    train_multiple_models(real_data_folder, fake_data_folder, 1000, 250, 10)
-    train_multiple_models(real_data_folder, fake_data_folder, 2000, 500, 15)
-    train_multiple_models(real_data_folder, fake_data_folder, 500, 1, 5)
+    train_multiple_models(real_data_folder, fake_data_folder, 500, 100, 20)
+    train_multiple_models(real_data_folder, fake_data_folder, 1000, 250, 5)
+    train_multiple_models(real_data_folder, fake_data_folder, 2000, 1000, 5)
 
     print("Training Completed!")
